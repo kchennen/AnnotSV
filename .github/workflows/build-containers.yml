@@ -7,8 +7,6 @@ on:
       - "Dockerfile"
       - "AnnotSV.def"
       - ".github/workflows/build-containers.yml"
-    tags:
-      - "v*"
   workflow_dispatch:
 
 env:
@@ -27,11 +25,17 @@ jobs:
       packages: write
 
     outputs:
-      image-tag: ${{ steps.meta.outputs.version }}
+      annotsv-version: ${{ steps.version.outputs.annotsv_version }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Extract AnnotSV version from Dockerfile
+        id: version
+        run: |
+          ANNOTSV_VERSION=$(grep 'ARG ANNOTSV_VERSION=' Dockerfile | cut -d= -f2 | sed 's/^v//')
+          echo "annotsv_version=${ANNOTSV_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -49,9 +53,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.annotsv_version }}
             type=sha
 
       - name: Build and push Docker image
@@ -73,6 +76,7 @@ jobs:
     # eWaterCycle/setup-apptainer@v2 has no Node.js 24 release yet
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ANNOTSV_VERSION: ${{ needs.docker.outputs.annotsv-version }}
     permissions:
       contents: write
       packages: read
@@ -91,17 +95,26 @@ jobs:
 
       - name: Build Singularity image from Docker image
         run: |
-          apptainer build annotsv.sif "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          apptainer build annotsv_${{ env.ANNOTSV_VERSION }}.sif \
+            "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.ANNOTSV_VERSION }}"
 
       - name: Upload SIF as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: annotsv-singularity
-          path: annotsv.sif
+          name: annotsv-${{ env.ANNOTSV_VERSION }}-singularity
+          path: annotsv_${{ env.ANNOTSV_VERSION }}.sif
           retention-days: 90
 
-      - name: Attach SIF to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Create GitHub Release and attach SIF
         uses: softprops/action-gh-release@v2
         with:
-          files: annotsv.sif
+          tag_name: v${{ env.ANNOTSV_VERSION }}
+          name: AnnotSV ${{ env.ANNOTSV_VERSION }}
+          body: |
+            Docker image: `ghcr.io/kchennen/annotsv:${{ env.ANNOTSV_VERSION }}`
+
+            Pull the Singularity image:
+            ```bash
+            singularity pull annotsv_${{ env.ANNOTSV_VERSION }}.sif docker://ghcr.io/kchennen/annotsv:${{ env.ANNOTSV_VERSION }}
+            ```
+          files: annotsv_${{ env.ANNOTSV_VERSION }}.sif
