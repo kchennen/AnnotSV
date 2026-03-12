@@ -15,6 +15,8 @@ env:
   REGISTRY: ghcr.io
   # Must be lowercase for OCI compliance (Apptainer rejects mixed-case)
   IMAGE_NAME: kchennen/annotsv
+  # Use Node.js 24 for GitHub Actions
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ──────────────────────────────────────────────
