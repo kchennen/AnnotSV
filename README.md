@@ -7,9 +7,19 @@
 
 Docker and Singularity container definitions for [AnnotSV v3.5.5](https://github.com/lgmgeo/AnnotSV).
 
-Annotations are **not** included in the images. They must be downloaded once on the host and mounted into the container at runtime.
+**Included in the images:**
+- AnnotSV v3.5.5
+- Exomiser REST prioritiser JAR (v14.1.0)
+- Poetry (Python dependency manager)
+- bedtools, bcftools, Java, Python 3
+
+**Not included — mount at runtime (~3.5GB total):**
+- Human/mouse annotation files
+- Exomiser phenotype data (`2406_phenotype.zip`)
 
 ## Downloading Annotations
+
+Annotations (including Exomiser phenotype data) must be downloaded once on the host:
 
 ```bash
 git clone --depth 1 --branch v3.5.5 https://github.com/lgmgeo/AnnotSV.git /tmp/AnnotSV
@@ -17,7 +27,7 @@ cd /tmp/AnnotSV && make PREFIX=. install && make PREFIX=. install-human-annotati
 # For mouse: make PREFIX=. install-mouse-annotation
 ```
 
-This creates the annotation directory at `/tmp/AnnotSV/share/AnnotSV/`. Use this path (or move it wherever you like) as the mount source below.
+This creates the annotation directory at `/tmp/AnnotSV/share/AnnotSV/` (~3.5GB). Use this path (or move it wherever you like) as the mount source below.
 
 ## Docker
 
