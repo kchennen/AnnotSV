@@ -2,6 +2,18 @@
 
 Docker and Singularity container definitions for [AnnotSV v3.5.5](https://github.com/lgmgeo/AnnotSV).
 
+Annotations are **not** included in the images. They must be downloaded once on the host and mounted into the container at runtime.
+
+## Downloading Annotations
+
+```bash
+git clone --depth 1 --branch v3.5.5 https://github.com/lgmgeo/AnnotSV.git /tmp/AnnotSV
+cd /tmp/AnnotSV && make PREFIX=. install && make PREFIX=. install-human-annotation
+# For mouse: make PREFIX=. install-mouse-annotation
+```
+
+This creates the annotation directory at `/tmp/AnnotSV/share/AnnotSV/`. Use this path (or move it wherever you like) as the mount source below.
+
 ## Docker
 
 ### Build
@@ -10,16 +22,17 @@ Docker and Singularity container definitions for [AnnotSV v3.5.5](https://github
 docker build -t annotsv:3.5.5 .
 ```
 
-To skip downloading annotations during build (mount them at runtime instead), comment out the `install-human-annotation` line in the Dockerfile.
-
 ### Run
 
 ```bash
 # Show help
 docker run --rm annotsv:3.5.5
 
-# Annotate a VCF
-docker run --rm -v /path/to/data:/data annotsv:3.5.5 \
+# Annotate a VCF (mount annotations + data)
+docker run --rm \
+  -v /path/to/annotations:/opt/AnnotSV/share/AnnotSV \
+  -v /path/to/data:/data \
+  annotsv:3.5.5 \
   -SVinputFile /data/input.vcf \
   -outputDir /data/output
 ```
@@ -29,7 +42,6 @@ docker run --rm -v /path/to/data:/data annotsv:3.5.5 \
 ### Build from Docker image (recommended)
 
 ```bash
-# Build the Docker image first, then convert to SIF
 docker build -t annotsv:3.5.5 .
 singularity build annotsv.sif docker-daemon://annotsv:3.5.5
 ```
@@ -46,13 +58,23 @@ sudo singularity build annotsv.sif AnnotSV.def
 # Show help
 singularity run annotsv.sif -help
 
-# Annotate a VCF
-singularity run -B /path/to/data:/data annotsv.sif \
+# Annotate a VCF (bind-mount annotations + data)
+singularity run \
+  -B /path/to/annotations:/opt/AnnotSV/share/AnnotSV \
+  -B /path/to/data:/data \
+  annotsv.sif \
   -SVinputFile /data/input.vcf \
   -outputDir /data/output
 ```
 
-## Notes
+Alternatively, use the `-annotationsDir` flag instead of mounting to the default path:
 
-- Human annotations (~1.5GB) are downloaded during build by default. To use external annotations instead, comment out the `install-human-annotation` line and bind-mount your annotation directory.
-- For mouse annotations, add `make PREFIX=. install-mouse-annotation` to the build.
+```bash
+singularity run \
+  -B /path/to/annotations:/annotations \
+  -B /path/to/data:/data \
+  annotsv.sif \
+  -annotationsDir /annotations \
+  -SVinputFile /data/input.vcf \
+  -outputDir /data/output
+```

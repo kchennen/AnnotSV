@@ -48,9 +48,8 @@ From: ubuntu:22.04
     cd AnnotSV
     make PREFIX=. install
 
-    # Download human annotations (large ~1.5GB)
-    # Comment out the next line if you prefer to bind-mount annotations at runtime
-    make PREFIX=. install-human-annotation
+    # Annotations are NOT bundled in the image.
+    # Bind-mount your annotation directory at runtime.
 
 %runscript
     exec AnnotSV "$@"
@@ -58,12 +57,13 @@ From: ubuntu:22.04
 %help
     AnnotSV v3.5.5 - Annotation and Ranking of Structural Variations
 
-    Usage:
-      singularity run annotsv.sif -SVinputFile <input.vcf> -outputDir <outdir> [options]
-      singularity exec annotsv.sif AnnotSV -SVinputFile <input.vcf> -outputDir <outdir> [options]
+    Annotations must be bind-mounted at runtime.
 
-    Example with bind mounts:
-      singularity run -B /path/to/data:/data annotsv.sif \
+    Usage:
+      singularity run \
+        -B /path/to/annotations:/opt/AnnotSV/share/AnnotSV \
+        -B /path/to/data:/data \
+        annotsv.sif \
         -SVinputFile /data/input.vcf \
         -outputDir /data/output
 

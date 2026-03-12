@@ -36,9 +36,14 @@ RUN git clone --depth 1 --branch ${ANNOTSV_VERSION} https://github.com/lgmgeo/An
     cd AnnotSV && \
     make PREFIX=. install
 
-# Download human annotations (large ~1.5GB)
-# Comment out the next line if you prefer to mount annotations at runtime
-RUN cd /opt/AnnotSV && make PREFIX=. install-human-annotation
+# Annotations are NOT bundled in the image.
+# Mount your annotation directory at runtime via:
+#   -v /path/to/annotations:/opt/AnnotSV/share/AnnotSV
+#
+# To download annotations locally:
+#   git clone --depth 1 --branch v3.5.5 https://github.com/lgmgeo/AnnotSV.git /tmp/AnnotSV
+#   cd /tmp/AnnotSV && make PREFIX=. install && make PREFIX=. install-human-annotation
+#   Then mount /tmp/AnnotSV/share/AnnotSV into the container.
 
 # Add AnnotSV to PATH
 ENV ANNOTSV=/opt/AnnotSV
