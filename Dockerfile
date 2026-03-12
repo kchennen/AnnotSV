@@ -41,9 +41,9 @@ RUN git clone --depth 1 --branch ${ANNOTSV_VERSION} https://github.com/lgmgeo/An
     cd AnnotSV && \
     make PREFIX=. install
 
-# Install Exomiser REST prioritiser JAR
+# Install Exomiser REST prioritiser JAR only (USEANNODIR=1 skips phenotype data)
 # Phenotype data (~2GB) is NOT bundled — mount annotations at runtime
-RUN cd /opt/AnnotSV && make PREFIX=. install-exomiser-2
+RUN cd /opt/AnnotSV && make PREFIX=. USEANNODIR=1 install-exomiser-1
 
 # Add AnnotSV and Poetry to PATH
 ENV ANNOTSV=/opt/AnnotSV
