@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     default-jre-headless \
     python3 \
     python3-pip \
+    python3-venv \
     curl \
     wget \
     tar \
@@ -30,24 +31,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone and install AnnotSV
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+
+# Clone and install AnnotSV (includes variantconvert via pip)
 WORKDIR /opt
 RUN git clone --depth 1 --branch ${ANNOTSV_VERSION} https://github.com/lgmgeo/AnnotSV.git && \
     cd AnnotSV && \
     make PREFIX=. install
 
+# Install Exomiser REST prioritiser JAR
+# Phenotype data (~2GB) is NOT bundled — mount annotations at runtime
+RUN cd /opt/AnnotSV && make PREFIX=. install-exomiser-2
+
+# Add AnnotSV and Poetry to PATH
+ENV ANNOTSV=/opt/AnnotSV
+ENV PATH="${ANNOTSV}/bin:/root/.local/bin:${PATH}"
+
 # Annotations are NOT bundled in the image.
 # Mount your annotation directory at runtime via:
 #   -v /path/to/annotations:/opt/AnnotSV/share/AnnotSV
 #
-# To download annotations locally:
+# To download annotations locally (includes Exomiser phenotype data):
 #   git clone --depth 1 --branch v3.5.5 https://github.com/lgmgeo/AnnotSV.git /tmp/AnnotSV
 #   cd /tmp/AnnotSV && make PREFIX=. install && make PREFIX=. install-human-annotation
 #   Then mount /tmp/AnnotSV/share/AnnotSV into the container.
-
-# Add AnnotSV to PATH
-ENV ANNOTSV=/opt/AnnotSV
-ENV PATH="${ANNOTSV}/bin:${PATH}"
 
 WORKDIR /data
 

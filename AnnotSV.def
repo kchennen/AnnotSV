@@ -16,7 +16,7 @@ From: ubuntu:22.04
 
 %environment
     export ANNOTSV=/opt/AnnotSV
-    export PATH="/opt/AnnotSV/bin:${PATH}"
+    export PATH="/opt/AnnotSV/bin:/root/.local/bin:${PATH}"
     export LC_ALL=C
 
 %post
@@ -34,6 +34,7 @@ From: ubuntu:22.04
         default-jre-headless \
         python3 \
         python3-pip \
+        python3-venv \
         curl \
         wget \
         tar \
@@ -42,14 +43,19 @@ From: ubuntu:22.04
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-    # Clone and install AnnotSV
+    # Install Poetry
+    curl -sSL https://install.python-poetry.org | python3 -
+    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+
+    # Clone and install AnnotSV (includes variantconvert via pip)
     cd /opt
     git clone --depth 1 --branch ${ANNOTSV_VERSION} https://github.com/lgmgeo/AnnotSV.git
     cd AnnotSV
     make PREFIX=. install
 
-    # Annotations are NOT bundled in the image.
-    # Bind-mount your annotation directory at runtime.
+    # Install Exomiser REST prioritiser JAR
+    # Phenotype data (~2GB) is NOT bundled — bind-mount annotations at runtime
+    make PREFIX=. install-exomiser-2
 
 %runscript
     exec AnnotSV "$@"
@@ -57,7 +63,7 @@ From: ubuntu:22.04
 %help
     AnnotSV v3.5.5 - Annotation and Ranking of Structural Variations
 
-    Annotations must be bind-mounted at runtime.
+    Annotations must be bind-mounted at runtime (includes Exomiser phenotype data).
 
     Usage:
       singularity run \
