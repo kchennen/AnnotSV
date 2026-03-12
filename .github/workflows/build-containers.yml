@@ -1,0 +1,103 @@
+name: Build Container Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "AnnotSV.def"
+      - ".github/workflows/build-containers.yml"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Job 1: Build and push Docker image to GHCR
+  # ──────────────────────────────────────────────
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ──────────────────────────────────────────────
+  # Job 2: Build Singularity image from Docker
+  # ──────────────────────────────────────────────
+  singularity:
+    runs-on: ubuntu-latest
+    needs: docker
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Apptainer
+        uses: eWaterCycle/setup-apptainer@v2
+        with:
+          apptainer-version: 1.3.6
+
+      - name: Log in to GHCR for Apptainer
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | apptainer remote login --username "${{ github.actor }}" --password-stdin "oras://ghcr.io"
+
+      - name: Build Singularity image from Docker image
+        run: |
+          apptainer build annotsv.sif "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+
+      - name: Upload SIF as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: annotsv-singularity
+          path: annotsv.sif
+          retention-days: 90
+
+      - name: Attach SIF to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: annotsv.sif
