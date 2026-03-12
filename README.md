@@ -1,5 +1,10 @@
 # AnnotSV Container Images
 
+[![Build Container Images](https://github.com/kchennen/AnnotSV/actions/workflows/build-containers.yml/badge.svg)](https://github.com/kchennen/AnnotSV/actions/workflows/build-containers.yml)
+[![Docker Image](https://ghcr-badge.egpl.dev/kchennen/annotsv/latest_tag?trim=major&label=ghcr.io&color=blue)](https://github.com/kchennen/AnnotSV/pkgs/container/annotsv)
+[![AnnotSV](https://img.shields.io/badge/AnnotSV-v3.5.5-brightgreen)](https://github.com/lgmgeo/AnnotSV)
+[![License](https://img.shields.io/github/license/kchennen/AnnotSV)](LICENSE)
+
 Docker and Singularity container definitions for [AnnotSV v3.5.5](https://github.com/lgmgeo/AnnotSV).
 
 Annotations are **not** included in the images. They must be downloaded once on the host and mounted into the container at runtime.
