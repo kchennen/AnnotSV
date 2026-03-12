@@ -21,7 +21,15 @@ This creates the annotation directory at `/tmp/AnnotSV/share/AnnotSV/`. Use this
 
 ## Docker
 
-### Build
+### Pull from GitHub Container Registry
+
+```bash
+docker pull ghcr.io/kchennen/annotsv:3.5.5
+# or latest
+docker pull ghcr.io/kchennen/annotsv:latest
+```
+
+### Build locally
 
 ```bash
 docker build -t annotsv:3.5.5 .
@@ -31,43 +39,55 @@ docker build -t annotsv:3.5.5 .
 
 ```bash
 # Show help
-docker run --rm annotsv:3.5.5
+docker run --rm ghcr.io/kchennen/annotsv:3.5.5
 
 # Annotate a VCF (mount annotations + data)
 docker run --rm \
   -v /path/to/annotations:/opt/AnnotSV/share/AnnotSV \
   -v /path/to/data:/data \
-  annotsv:3.5.5 \
+  ghcr.io/kchennen/annotsv:3.5.5 \
   -SVinputFile /data/input.vcf \
   -outputDir /data/output
 ```
 
 ## Singularity
 
-### Build from Docker image (recommended)
+### Pull SIF from GitHub Release (recommended)
+
+Pre-built SIF files are attached to each [GitHub Release](https://github.com/kchennen/AnnotSV/releases).
+
+```bash
+# Download directly from the release
+wget https://github.com/kchennen/AnnotSV/releases/download/v3.5.5/annotsv_3.5.5.sif
+
+# Or convert from the GHCR Docker image
+singularity pull annotsv_3.5.5.sif docker://ghcr.io/kchennen/annotsv:3.5.5
+```
+
+### Build locally from Docker image
 
 ```bash
 docker build -t annotsv:3.5.5 .
-singularity build annotsv.sif docker-daemon://annotsv:3.5.5
+singularity build annotsv_3.5.5.sif docker-daemon://annotsv:3.5.5
 ```
 
 ### Build from definition file
 
 ```bash
-sudo singularity build annotsv.sif AnnotSV.def
+sudo singularity build annotsv_3.5.5.sif AnnotSV.def
 ```
 
 ### Run
 
 ```bash
 # Show help
-singularity run annotsv.sif -help
+singularity run annotsv_3.5.5.sif -help
 
 # Annotate a VCF (bind-mount annotations + data)
 singularity run \
   -B /path/to/annotations:/opt/AnnotSV/share/AnnotSV \
   -B /path/to/data:/data \
-  annotsv.sif \
+  annotsv_3.5.5.sif \
   -SVinputFile /data/input.vcf \
   -outputDir /data/output
 ```
@@ -78,7 +98,7 @@ Alternatively, use the `-annotationsDir` flag instead of mounting to the default
 singularity run \
   -B /path/to/annotations:/annotations \
   -B /path/to/data:/data \
-  annotsv.sif \
+  annotsv_3.5.5.sif \
   -annotationsDir /annotations \
   -SVinputFile /data/input.vcf \
   -outputDir /data/output
