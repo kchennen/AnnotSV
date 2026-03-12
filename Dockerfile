@@ -4,7 +4,7 @@
 
 FROM ubuntu:22.04
 
-LABEL maintainer="AnnotSV Container"
+LABEL maintainer="kchennen@unistra.fr"
 LABEL description="AnnotSV - Annotation and Ranking of Structural Variations"
 LABEL version="3.5.5"
 

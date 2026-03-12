@@ -10,7 +10,7 @@ Bootstrap: docker
 From: ubuntu:22.04
 
 %labels
-    Author AnnotSV Container
+    Author kchennen@unistra.fr
     Description AnnotSV - Annotation and Ranking of Structural Variations
     Version 3.5.5
 
